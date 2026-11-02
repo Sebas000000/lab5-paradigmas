@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat UNA - Socket.IO con Soporte Multimedia</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-color: #4f46e5;
+        --primary-hover: #4338ca;
+        --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        --chat-bg: rgba(255, 255, 255, 0.96);
+        --header-bg: #1e1b4b;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border-color: #e2e8f0;
+        --msg-odd-bg: #f8fafc;
+        --msg-even-bg: #ffffff;
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--bg-gradient);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        color: var(--text-primary);
+      }
+
+      .chat-wrapper {
+        width: 100%;
+        max-width: 900px;
+        height: 92vh;
+        background: var(--chat-bg);
+        border-radius: 18px;
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+      }
+
+      /* Chat Header */
+      .chat-header {
+        background: var(--header-bg);
+        color: #ffffff;
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2px solid rgba(79, 70, 229, 0.3);
+      }
+
+      .chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .chat-logo-badge {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 20px;
+        color: white;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
+      }
+
+      .chat-title-group h1 {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .chat-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        color: #cbd5e1;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 8px #10b981;
+      }
+
+      .chat-hints {
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 5px 10px;
+        border-radius: 20px;
+        color: #e0e7ff;
+      }
+
+      /* Messages Area */
+      #messages-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+        background: #f1f5f9;
+        scroll-behavior: smooth;
+      }
+
+      #messages {
+        list-style-type: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      #messages li {
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: var(--msg-even-bg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
+        word-break: break-word;
+        line-height: 1.5;
+        transition: transform 0.15s ease;
+      }
+
+      #messages li:hover {
+        transform: translateY(-1px);
+      }
+
+      #messages li:nth-child(odd) {
+        background: var(--msg-odd-bg);
+      }
+
+      .msg-author {
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .msg-avatar {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .msg-body {
+        margin-top: 4px;
+        color: #334155;
+      }
+
+      .msg-body img {
+        max-width: 100%;
+        max-height: 380px;
+        object-fit: contain;
+        border-radius: 10px;
+        margin-top: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease;
+      }
+
+      .msg-body img:hover {
+        transform: scale(1.01);
+      }
+
+      .msg-body iframe {
+        max-width: 100%;
+        border-radius: 10px;
+        margin-top: 8px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .msg-body video {
+        max-width: 100%;
+        border-radius: 10px;
+        margin-top: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Form & Input Bar */
+      form {
+        background: #ffffff;
+        padding: 14px 20px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        border-top: 1px solid var(--border-color);
+        position: relative;
+      }
+
+      #nombre {
+        width: 22%;
+        min-width: 130px;
+        padding: 12px 14px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+        background: #f8fafc;
+      }
+
+      #nombre:focus {
+        border-color: var(--primary-color);
+        background: #fff;
+      }
+
+      #m {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: inherit;
+        background: #f8fafc;
+      }
+
+      #m:focus {
+        border-color: var(--primary-color);
+        background: #fff;
+      }
+
+      form button {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, var(--primary-color), #6366f1);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+      }
+
+      form button:hover {
+        background: linear-gradient(135deg, var(--primary-hover), #4f46e5);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(79, 70, 229, 0.4);
+      }
+
+      form button:active {
+        transform: translateY(0);
+      }
+
+      /* Quick helper banner */
+      .quick-actions {
+        padding: 6px 20px;
+        background: #f8fafc;
+        border-top: 1px solid #edf2f7;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .quick-tags {
+        display: flex;
+        gap: 6px;
+      }
+
+      .quick-tag {
+        background: #e2e8f0;
+        color: #475569;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+
+      @media (max-width: 640px) {
+        .chat-wrapper {
+          height: 100vh;
+          border-radius: 0;
+          max-width: 100%;
+        }
+        body {
+          padding: 0;
+        }
+        form {
+          flex-wrap: wrap;
+        }
+        #nombre {
+          width: 100%;
+        }
+        #m {
+          width: calc(100% - 90px);
+        }
+        form button {
+          width: 80px;
+          padding: 12px 10px;
+          justify-content: center;
+        }
+        .chat-hints {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-wrapper">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <div class="chat-logo-badge">UNA</div>
+          <div class="chat-title-group">
+            <h1>Chat Socket.IO UNA</h1>
+            <div class="chat-status">
+              <span class="status-dot"></span>
+              <span>En línea &bull; Soporte para Imágenes y Videos</span>
+            </div>
+          </div>
+        </div>
+        <div class="chat-hints">
+          Pegue URLs de imágenes (.jpg, .png, .gif) o videos (YouTube, .mp4)
+        </div>
+      </div>
+
+      <!-- Messages View -->
+      <div id="messages-container">
+        <ul id="messages"></ul>
+      </div>
+
+      <!-- Quick hints footer -->
+      <div class="quick-actions">
+        <span class="quick-label">Formatos admitidos:</span>
+        <div class="quick-tags">
+          <span class="quick-tag">JPG / PNG / GIF</span>
+          <span class="quick-tag">YouTube URLs</span>
+          <span class="quick-tag">MP4 / WebM</span>
+        </div>
+      </div>
+
+      <!-- Send Form -->
+      <form action="">
+        <input id="nombre" autocomplete="off" placeholder="Tu Nombre de usuario" />
+        <input id="m" autocomplete="off" placeholder="Escriba un mensaje o ingrese la URL de una imagen o video..." />
+        <button id="send-btn" type="submit">
+          <span>Enviar</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Socket.IO & jQuery Scripts -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      var colorHexTxt = "";
+
+      // Genera colores aleatorios en hexadecimal armónicos
+      function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+
+      $(function () {
+        var socket = io();
+
+        // Enviar mensaje al enviar el formulario
+        $('form').submit(function (e) {
+          e.preventDefault();
+          var nombreTxt = $('#nombre').val().trim() || "Anonimo";
+          var mensajeTxt = $('#m').val();
+
+          // Evitar enviar mensajes vacios
+          if (!mensajeTxt || mensajeTxt.trim() === '') {
+            return false;
+          }
+
+          if (colorHexTxt === "") {
+            colorHexTxt = getRandomColor();
+          }
+
+          var jsonMsg = {
+            nombre: nombreTxt,
+            mensaje: mensajeTxt,
+            color: colorHexTxt
+          };
+
+          // Emitir evento al servidor
+          socket.emit('Evento-Mensaje-Server', JSON.stringify(jsonMsg));
+          
+          // Limpiar campo de texto y enfocar
+          $('#m').val('').focus();
+          return false;
+        });
+
+        // Escuchar mensajes entrantes del servidor
+        socket.on('Evento-Mensaje-Server', function (msg) {
+          try {
+            var msgJson = typeof msg === 'string' ? JSON.parse(msg) : msg;
+            var safeColor = msgJson.color || '#4f46e5';
+            var safeNombre = msgJson.nombre || 'Anonimo';
+            var safeMensaje = msgJson.mensaje || '';
+
+            var mensajeHtml = 
+              "<div class='msg-author' style='color:" + safeColor + "'>" +
+                "<span class='msg-avatar' style='background:" + safeColor + "'></span>" +
+                safeNombre +
+              "</div>" +
+              "<div class='msg-body'>" + safeMensaje + "</div>";
+
+            var $li = $('<li>').html(mensajeHtml);
+            $('#messages').append($li);
+
+            // Auto-scroll hacia el mensaje mas reciente
+            var container = document.getElementById('messages-container');
+            if (container) {
+              container.scrollTop = container.scrollHeight;
+            }
+          } catch (err) {
+            console.error('Error al renderizar mensaje:', err);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

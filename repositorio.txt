@@ -1,0 +1,70 @@
+================================================================================
+UNIVERSIDAD NACIONAL DE COSTA RICA
+SEDE REGIONAL CHOROTEGA - CAMPUS NICOYA
+INGENIERÍA EN SISTEMAS DE INFORMACIÓN
+CURSO: PARADIGMAS DE PROGRAMACIÓN
+LABORATORIO 5: SEGURIDAD INFORMÁTICA - UNA CHAT
+PROFESOR: ING. ALEX VILLEGAS CARRANZA, M.SC.
+================================================================================
+
+ENLACE AL REPOSITORIO DE GITHUB:
+https://github.com/Sebas000000/lab5-paradigmas
+
+DESCRIPCIÓN DEL PROYECTO:
+El proyecto UNA Chat implementa una arquitectura cliente-servidor en tiempo real
+con Node.js, Express y Socket.IO. Se ha reforzado la seguridad contra inyecciones
+de scripts (XSS), implementando la librería 'una-lib' con validación, sanitización
+y escape de código malicioso, junto con soporte seguro para URLs multimedia de
+imágenes (<img>) y videos (reproductor YouTube en <iframe> y HTML5 <video>).
+
+SUITES DE PRUEBAS IMPLEMENTADAS:
+1. Pruebas Unitarias (Mocha):
+   - Valida números telefónicos base.
+   - 7.1: Validación de extensiones de imágenes y generación de tags <img>.
+   - 7.2: Validación de videos YouTube / directos y generación de reproductor.
+   - 7.3: Prevención y eliminación de inyección de scripts (<script>, onload/onerror, javascript:, XSS).
+   - Total: 23 pruebas aprobadas (100% de éxito).
+
+2. Pruebas de Integración (Jest + Supertest):
+   - Ubicación: tests/integration/chat.test.js
+   - Verifica la integración real entre el backend Express y 'una-lib' (validarMensaje).
+   - Casos: URLs de imágenes válidas (200), videos YouTube (200), videos directos (200),
+     saneamiento de scripts (200) y rechazo de URLs no permitidas (400).
+   - Total: 6 pruebas de integración aprobadas.
+
+3. Pruebas End-to-End (Playwright):
+   - Ubicación: tests/e2e/chat.spec.js
+   - Configuración: playwright.config.js
+   - Ejecuta navegación y comprobaciones en Chromium del flujo real completo en frontend:
+     renderizado de imágenes, carga de reproductores de video y verificación de que
+     no se ejecuten alertas emergentes ante scripts maliciosos.
+   - Total: 4 pruebas E2E aprobadas.
+
+COMANDOS PARA EJECUTAR:
+- Instalación de dependencias:
+  npm install
+
+- Iniciar servidor de UNA Chat:
+  npm start
+
+- Ejecutar Pruebas Unitarias (Evidencia 2):
+  npm test
+
+- Ejecutar Pruebas de Integración (Evidencia 3):
+  npm run test:integration
+
+- Ejecutar Pruebas End-to-End con Playwright (Evidencia 4):
+  npm run test:e2e
+  (o con interfaz gráfica visible: npm run test:e2e:headed)
+
+- Ejecutar todas las suites de prueba secuencialmente:
+  npm run test:all
+
+ARCHIVOS DE EVIDENCIAS GENERADOS:
+- evidencia_1.jpg: Resultado de la prueba de inyección de scripts original (vulnerabilidad XSS activa).
+- evidencia_2.jpg: Ejecución de las 23 pruebas unitarias aprobadas con Mocha.
+- evidencia_3.jpg: Ejecución de las pruebas de integración con Jest y Supertest.
+- evidencia_4.jpg: Ejecución de las pruebas End-to-End con Playwright en Chromium.
+- evidencia_5.jpg: Escaneo y mitigación de dependencias críticas y altas (Snyk / audit).
+- Laboratorio_5_Evidencias.pdf: Documento formal institucional con todas las evidencias integradas.
+================================================================================
